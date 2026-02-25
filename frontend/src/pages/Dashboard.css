@@ -1,0 +1,167 @@
+/* Dashboard.css */
+
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--color-background);
+}
+
+.sidebar {
+    width: 250px;
+    background-color: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: var(--space-24);
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-nav {
+    padding: var(--space-16) var(--space-12);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.sidebar-nav a {
+    padding: var(--space-12) var(--space-16);
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.sidebar-nav a:hover {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+}
+
+.sidebar-nav a.active {
+    background-color: var(--color-secondary);
+    color: var(--color-primary);
+}
+
+.main-content {
+    flex: 1;
+    padding: var(--space-48) var(--space-64);
+    max-width: 1000px;
+}
+
+.content-header {
+    margin-bottom: var(--space-48);
+}
+
+.ingestion-card {
+    max-width: 600px;
+}
+
+.mb-24 {
+    margin-bottom: var(--space-24);
+}
+
+.mt-16 {
+    margin-top: var(--space-16);
+}
+
+.mt-24 {
+    margin-top: var(--space-24);
+}
+
+.mt-48 {
+    margin-top: var(--space-48);
+}
+
+.ingestion-form {
+    display: flex;
+    gap: var(--space-12);
+}
+
+.input-group {
+    position: relative;
+    flex: 1;
+}
+
+.input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.input-group .input {
+    padding-left: 44px;
+    /* Space for icon */
+}
+
+/* States */
+.ingesting-state,
+.success-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-32) 0;
+    text-align: center;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+    margin-bottom: var(--space-16);
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background-color: var(--color-border);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: var(--color-primary);
+    transition: width 0.3s ease;
+}
+
+.success-actions {
+    display: flex;
+    gap: var(--space-12);
+}
+
+.text-success {
+    color: var(--color-success);
+}
+
+.preview-container {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    min-height: 400px;
+    display: flex;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+}
+
+.empty-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    background-color: var(--color-background);
+}
