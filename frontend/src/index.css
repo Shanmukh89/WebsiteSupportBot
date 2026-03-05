@@ -1,7 +1,8 @@
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
 :root {
-  /* Colors */
+  /* Colors - Default (Light - used for dashboard) */
   --color-primary: #5B5BD6;
   --color-secondary: #E9EAFB;
   --color-background: #FAFAFC;
@@ -9,14 +10,23 @@
   --color-text-primary: #111827;
   --color-text-secondary: #6B7280;
   --color-border: #E5E7EB;
-  
+
   --color-success: #16A34A;
   --color-warning: #F59E0B;
   --color-error: #DC2626;
 
+  /* Dovetail Inspired Dark Theme Tokens */
+  --dt-bg-black: #080808;
+  --dt-bg-surface: #1E1E1E;
+  --dt-text-white: #FFFFFF;
+  --dt-text-muted: rgba(255, 255, 255, 0.64);
+  --dt-accent-blue: #0044FF;
+  --dt-accent-border: rgba(255, 255, 255, 0.16);
+
   /* Typography */
   --font-family-base: 'Inter', system-ui, -apple-system, sans-serif;
-  
+  --font-family-mono: 'JetBrains Mono', SF Mono, Consolas, Roboto, sans-serif;
+
   --font-size-12: 12px;
   --font-size-14: 14px;
   --font-size-16: 16px;
@@ -25,8 +35,10 @@
   --font-size-32: 32px;
   --font-size-40: 40px;
   --font-size-48: 48px;
+  --font-size-hero: 72px;
 
   --line-height-base: 1.5;
+  --line-height-tight: 1.1;
 
   /* Spacing Scale (4px base) */
   --space-4: 4px;
@@ -38,6 +50,7 @@
   --space-48: 48px;
   --space-64: 64px;
   --space-96: 96px;
+  --space-128: 128px;
 
   /* Border Radius */
   --radius-sm: 6px;
@@ -46,12 +59,14 @@
   --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-subtle: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 6px 18px rgba(0,0,0,0.06);
-  --shadow-lg: 0 12px 32px rgba(0,0,0,0.08);
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.08);
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -64,10 +79,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin: 0;
-  font-weight: 600; /* semi-bold */
-  letter-spacing: -0.02em; /* tight letter spacing */
+  font-weight: 500;
+  letter-spacing: -0.02em;
   line-height: 1.2;
 }
 
@@ -81,16 +101,57 @@ a {
   text-decoration: none;
 }
 
-button, input {
+button,
+input {
   font-family: inherit;
   font-size: var(--font-size-16);
 }
 
 /* Typography Classes */
-.text-hero { font-size: var(--font-size-48); }
-.text-section { font-size: var(--font-size-40); }
-.text-subsection { font-size: var(--font-size-32); }
-.text-card-title { font-size: var(--font-size-24); }
-.text-body { font-size: var(--font-size-16); }
-.text-metadata { font-size: var(--font-size-14); }
-.text-label { font-size: var(--font-size-12); }
+.text-dt-hero {
+  font-size: clamp(48px, 6vw, var(--font-size-hero));
+  font-weight: 500;
+  line-height: var(--line-height-tight);
+  letter-spacing: -0.04em;
+}
+
+.text-dt-section {
+  font-size: clamp(32px, 4vw, var(--font-size-48));
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.text-dt-mono {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-12);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.text-hero {
+  font-size: var(--font-size-48);
+}
+
+.text-section {
+  font-size: var(--font-size-40);
+}
+
+.text-subsection {
+  font-size: var(--font-size-32);
+}
+
+.text-card-title {
+  font-size: var(--font-size-24);
+}
+
+.text-body {
+  font-size: var(--font-size-16);
+}
+
+.text-metadata {
+  font-size: var(--font-size-14);
+}
+
+.text-label {
+  font-size: var(--font-size-12);
+}

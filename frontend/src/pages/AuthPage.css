@@ -1,0 +1,444 @@
+/* ═══════════════════════════════════════════════ */
+/* Modal Auth — Full-screen backdrop               */
+/* ═══════════════════════════════════════════════ */
+.dt-modal-auth-backdrop {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #050505;
+    overflow: hidden;
+}
+
+.dt-modal-auth-backdrop canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Ambient glows */
+.dt-modal-glow {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.dt-modal-glow-1 {
+    width: 600px;
+    height: 600px;
+    bottom: -20%;
+    right: -5%;
+    background: radial-gradient(circle, rgba(200, 60, 100, 0.12) 0%, transparent 70%);
+}
+
+.dt-modal-glow-2 {
+    width: 500px;
+    height: 500px;
+    bottom: -15%;
+    right: 10%;
+    background: radial-gradient(circle, rgba(100, 50, 200, 0.08) 0%, transparent 70%);
+}
+
+.dt-modal-glow-3 {
+    width: 400px;
+    height: 400px;
+    top: 5%;
+    left: -5%;
+    background: radial-gradient(circle, rgba(30, 60, 180, 0.06) 0%, transparent 70%);
+}
+
+.dt-modal-auth-wrapper {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 420px;
+    padding: 0 24px;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* Modal Card                                      */
+/* ═══════════════════════════════════════════════ */
+.dt-modal-card {
+    position: relative;
+    width: 100%;
+    background: rgba(18, 18, 22, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 32px 28px 28px 28px;
+    backdrop-filter: blur(24px);
+    box-shadow:
+        0 24px 80px -12px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    animation: modalSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Close button */
+.dt-modal-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 20;
+}
+
+.dt-modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* Pill Toggle                                     */
+/* ═══════════════════════════════════════════════ */
+.dt-modal-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 100px;
+    padding: 4px;
+    width: fit-content;
+    margin: 0 auto 24px auto;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dt-modal-toggle-btn {
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.45);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+.dt-modal-toggle-btn.active {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dt-modal-toggle-btn:hover:not(.active) {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ═══════════════════════════════════════════════ */
+/* Modal Body & Typography                         */
+/* ═══════════════════════════════════════════════ */
+.dt-modal-body {
+    position: relative;
+}
+
+.dt-modal-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 20px;
+    letter-spacing: -0.01em;
+}
+
+.dt-modal-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.dt-modal-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.45);
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 16px;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.dt-modal-back-btn:hover {
+    color: white;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* Form                                            */
+/* ═══════════════════════════════════════════════ */
+.dt-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Name row — two columns */
+.dt-modal-name-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.dt-modal-name-field {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Input wrapper */
+.dt-modal-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.dt-modal-input-icon {
+    position: absolute;
+    left: 14px;
+    color: rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.dt-modal-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 14px;
+    padding: 13px 16px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    outline: none;
+}
+
+.dt-modal-input.has-icon {
+    padding-left: 40px;
+}
+
+.dt-modal-input::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.dt-modal-input:focus {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+}
+
+.dt-modal-input.has-error {
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.dt-modal-field-error {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: -4px;
+    padding-left: 2px;
+}
+
+.dt-modal-eye-btn {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.dt-modal-eye-btn:hover {
+    color: white;
+}
+
+/* Forgot password */
+.dt-modal-forgot-link {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.4);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.dt-modal-forgot-link:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* Primary Action Button                           */
+/* ═══════════════════════════════════════════════ */
+.dt-modal-primary-btn {
+    width: 100%;
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 500;
+    color: white;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dt-modal-primary-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.dt-modal-primary-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* Separator                                       */
+/* ═══════════════════════════════════════════════ */
+.dt-modal-separator {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.dt-modal-separator-line {
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.dt-modal-separator-text {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* Social Buttons                                  */
+/* ═══════════════════════════════════════════════ */
+.dt-modal-social-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.dt-modal-social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dt-modal-social-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ═══════════════════════════════════════════════ */
+/* Terms Text                                      */
+/* ═══════════════════════════════════════════════ */
+.dt-modal-terms {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.25);
+    margin-top: 20px;
+    line-height: 1.5;
+}
+
+.dt-modal-terms-link {
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.dt-modal-terms-link:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* Error                                           */
+/* ═══════════════════════════════════════════════ */
+.dt-modal-error {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* Responsive                                      */
+/* ═══════════════════════════════════════════════ */
+@media (max-width: 480px) {
+    .dt-modal-auth-wrapper {
+        padding: 0 16px;
+    }
+
+    .dt-modal-card {
+        border-radius: 20px;
+        padding: 24px 20px 20px 20px;
+    }
+
+    .dt-modal-name-row {
+        grid-template-columns: 1fr;
+    }
+
+    .dt-modal-title {
+        font-size: 20px;
+    }
+}

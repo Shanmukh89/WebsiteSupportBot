@@ -1,3 +1,4 @@
+@import "tailwindcss";
 /* ui.css */
 
 /* BUTTONS */
@@ -8,9 +9,10 @@
     height: 44px;
     /* Default height */
     padding: 12px 20px;
-    border-radius: var(--radius-md);
+    border-radius: 8px;
+    /* Slightly squarer for Dovetail look */
     font-weight: 500;
-    border: none;
+    border: 1px solid transparent;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
@@ -43,6 +45,26 @@
 
 .btn-secondary:hover {
     background-color: #d8d9f5;
+}
+
+/* Dovetail Theme Buttons */
+.btn-dt-solid {
+    background-color: var(--dt-text-white);
+    color: var(--dt-bg-black);
+}
+
+.btn-dt-solid:hover {
+    background-color: #f0f0f0;
+}
+
+.btn-dt-outline {
+    background-color: transparent;
+    border: 1px solid var(--dt-text-white);
+    color: var(--dt-text-white);
+}
+
+.btn-dt-outline:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* INPUTS */

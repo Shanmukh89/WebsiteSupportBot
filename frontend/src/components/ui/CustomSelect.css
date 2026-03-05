@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+.dt-custom-select-container {
+    position: relative;
+    width: 100%;
+    font-family: inherit;
+}
+
+.dt-custom-select-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    /* 1px solid rgba(255,255,255,0.08) */
+    color: var(--dt-text-white);
+    padding: 10px 14px;
+    border-radius: 12px;
+    /* 12px border radius */
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+    text-align: left;
+}
+
+.dt-custom-select-btn:hover {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dt-custom-select-btn:focus,
+.dt-custom-select-btn.open {
+    /* Subtle glow using primary color */
+    border-color: var(--dt-accent-blue);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.dt-custom-select-arrow {
+    color: var(--dt-muted);
+    transition: transform 0.2s;
+}
+
+.dt-custom-select-arrow.open {
+    transform: rotate(180deg);
+}
+
+.dt-custom-select-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    background: var(--dt-bg-surface);
+    /* Dark dropdown background */
+    border: 1px solid var(--dt-accent-border);
+    border-radius: 12px;
+    padding: 6px;
+    z-index: 50;
+    /* Dropdown menu shadow: 0 10px 30px rgba(0,0,0,0.4) */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    /* Smooth open animation (fade + slide) */
+    animation: dtSelectSlideDown 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dtSelectSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dt-custom-select-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    color: var(--dt-text-muted);
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+}
+
+.dt-custom-select-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--dt-text-white);
+}
+
+.dt-custom-select-item.selected {
+    /* Highlight selected item with primary color background (20% opacity) */
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--dt-text-white);
+    font-weight: 500;
+}
+
+.dt-custom-select-check {
+    color: var(--dt-accent-blue);
+}

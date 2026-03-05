@@ -1,14 +1,14 @@
 import React from 'react';
 import './ui.css';
 
-export function Button({ 
-  children, 
-  variant = 'primary', 
-  className = '', 
-  ...props 
+export function Button({
+  children,
+  variant = 'primary',
+  className = '',
+  ...props
 }) {
   return (
-    <button 
+    <button
       className={`btn btn-${variant} ${className}`}
       {...props}
     >
