@@ -30,6 +30,10 @@ const SCRAPE_STEPS = [
 ];
 
 export default function Dashboard() {
+    useEffect(() => {
+        document.title = 'Dashboard | Site2Support';
+    }, []);
+
     const navigate = useNavigate();
     const { user, isLoading: isUserLoading } = useUser();
     const { agents, setAgents, addAgent } = useAgents();

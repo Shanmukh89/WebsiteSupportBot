@@ -26,6 +26,10 @@ import { supabase } from '../lib/supabase';
 import './AccountSettings.css';
 
 export default function AccountSettings() {
+    useEffect(() => {
+        document.title = 'Account Settings | Site2Support';
+    }, []);
+
     const navigate = useNavigate();
     const { themeSettings, setThemeSettings } = useTheme();
     const { chatTheme, setChatTheme } = useChatTheme();

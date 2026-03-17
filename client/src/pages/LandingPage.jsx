@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Bot, ChevronRight, Lock, LayoutDashboard, LineChart, MoveRight, Layers, ArrowRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import './LandingPage.css';
@@ -10,6 +10,10 @@ import { FeatureAskAnimation } from '../components/FeatureAskAnimation';
 import { FeatureAnswerAnimation } from '../components/FeatureAnswerAnimation';
 
 export default function LandingPage({ onGetStarted }) {
+    useEffect(() => {
+        document.title = 'Site2Support';
+    }, []);
+
     return (
         <div className="dt-landing-container">
             {/* Navigation */}
