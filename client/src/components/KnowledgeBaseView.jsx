@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Globe,
@@ -10,13 +10,43 @@ import {
     AlertCircle,
     Clock
 } from 'lucide-react';
+import { useAgents } from '../context/AgentContext';
 import './KnowledgeBaseView.css';
 
-export default function KnowledgeBaseView({ agent, onUpdateKnowledge }) {
+export default function KnowledgeBaseView({ agent }) {
     const [isDragging, setIsDragging] = useState(false);
+    const [sources, setSources] = useState([]);
+    const [isLoadingSources, setIsLoadingSources] = useState(true);
     const fileInputRef = useRef(null);
+    const { fetchKnowledgeSources, addKnowledgeSource, deleteKnowledgeSource } = useAgents();
 
-    if (!agent || !agent.knowledge) {
+    // Fetch knowledge sources from Supabase when agent changes
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadSources() {
+            if (!agent) {
+                if (isMounted) {
+                    setSources([]);
+                    setIsLoadingSources(false);
+                }
+                return;
+            }
+
+            setIsLoadingSources(true);
+            const data = await fetchKnowledgeSources(agent.id);
+            if (isMounted) {
+                setSources(data);
+                setIsLoadingSources(false);
+            }
+        }
+
+        loadSources();
+
+        return () => { isMounted = false; };
+    }, [agent?.id]);
+
+    if (!agent) {
         return (
             <div className="dt-kb-empty-state">
                 <Loader2 className="spinner mb-4 text-dt-muted" size={24} />
@@ -25,23 +55,17 @@ export default function KnowledgeBaseView({ agent, onUpdateKnowledge }) {
         );
     }
 
-    const { pages = [], files = [], lastIndexed } = agent.knowledge;
+    // Derive pages (websites) and files from sources
+    const pages = sources.filter(s => s.source_type === 'website' || s.source_type === 'documentation' || s.source_type === 'faq');
+    const files = sources.filter(s => s.source_type === 'pdf' || s.source_type === 'file_upload');
+    const lastIndexed = sources.length > 0
+        ? new Date(Math.max(...sources.map(s => new Date(s.updated_at || s.created_at)))).toLocaleString()
+        : 'Never';
 
-    const handleDeletePage = (pageId) => {
-        if (confirm("Are you sure you want to remove this page from the knowledge base?")) {
-            onUpdateKnowledge(agent.id, prev => ({
-                ...prev,
-                pages: (prev.pages || []).filter(p => p.id !== pageId)
-            }));
-        }
-    };
-
-    const handleDeleteFile = (fileId) => {
-        if (confirm("Are you sure you want to delete this file?")) {
-            onUpdateKnowledge(agent.id, prev => ({
-                ...prev,
-                files: (prev.files || []).filter(f => f.id !== fileId)
-            }));
+    const handleDeleteSource = async (sourceId) => {
+        if (confirm("Are you sure you want to remove this from the knowledge base?")) {
+            await deleteKnowledgeSource(sourceId);
+            setSources(prev => prev.filter(s => s.id !== sourceId));
         }
     };
 
@@ -60,45 +84,68 @@ export default function KnowledgeBaseView({ agent, onUpdateKnowledge }) {
         e.target.value = '';
     };
 
-    const processNewFiles = (newFiles) => {
-        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        const processingIds = [];
-        const newFileObjects = [];
-
-        newFiles.forEach(file => {
+    const processNewFiles = async (newFiles) => {
+        for (const file of newFiles) {
             const ext = file.name.split('.').pop().toUpperCase();
-            const id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
-            processingIds.push(id);
+            const sourceType = ext === 'PDF' ? 'pdf' : 'file_upload';
 
-            newFileObjects.unshift({
-                id,
-                name: file.name,
-                type: ext || 'FILE',
-                status: 'Processing',
-                uploaded: 'Just now'
+            // Optimistic UI: add a "processing" entry
+            const tempId = 'temp-' + Date.now() + Math.random().toString(36).substr(2, 5);
+            const tempSource = {
+                id: tempId,
+                source_type: sourceType,
+                title: file.name,
+                file_name: file.name,
+                mime_type: file.type,
+                file_size: file.size,
+                status: 'processing',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+            setSources(prev => [tempSource, ...prev]);
+
+            // Insert into Supabase
+            const saved = await addKnowledgeSource(agent.id, {
+                source_type: sourceType,
+                title: file.name,
+                file_name: file.name,
+                mime_type: file.type,
+                file_size: file.size,
+                status: 'indexed',
             });
-        });
 
-        onUpdateKnowledge(agent.id, prevKnowledge => ({
-            ...prevKnowledge,
-            files: [...newFileObjects, ...(prevKnowledge.files || [])],
-            lastIndexed: 'Indexing...'
-        }));
+            // Replace temp entry with real data
+            if (saved) {
+                setSources(prev => prev.map(s => s.id === tempId ? saved : s));
+            } else {
+                // Mark as failed
+                setSources(prev => prev.map(s => s.id === tempId ? { ...s, status: 'failed' } : s));
+            }
+        }
+    };
 
-        // Simulate processing delay
-        setTimeout(() => {
-            onUpdateKnowledge(agent.id, prevKnowledge => {
-                const refreshedFiles = (prevKnowledge.files || []).map(f =>
-                    processingIds.includes(f.id) ? { ...f, status: 'Indexed' } : f
-                );
-                return {
-                    ...prevKnowledge,
-                    files: refreshedFiles,
-                    lastIndexed: 'Just now'
-                };
-            });
-        }, 3000);
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'indexed':
+                return <span className="dt-kb-status-badge success">Indexed</span>;
+            case 'processing':
+                return <span className="dt-kb-status-badge processing"><Loader2 size={12} className="spinner" /> Processing</span>;
+            case 'failed':
+                return <span className="dt-kb-status-badge" style={{ color: '#ef4444' }}><AlertCircle size={12} /> Failed</span>;
+            default:
+                return <span className="dt-kb-status-badge processing"><Loader2 size={12} className="spinner" /> Pending</span>;
+        }
+    };
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        const now = new Date();
+        const diff = now - d;
+        if (diff < 60000) return 'Just now';
+        if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+        if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+        return d.toLocaleDateString();
     };
 
     return (
@@ -108,8 +155,11 @@ export default function KnowledgeBaseView({ agent, onUpdateKnowledge }) {
                 <div className="dt-kb-header-title">
                     <h2>Knowledge Base</h2>
                     <div className="dt-kb-badge">
-                        <CheckCircle2 size={14} className="text-green-400" />
-                        <span>Ready</span>
+                        {isLoadingSources ? (
+                            <><Loader2 size={14} className="spinner" /><span>Loading</span></>
+                        ) : (
+                            <><CheckCircle2 size={14} className="text-green-400" /><span>Ready</span></>
+                        )}
                     </div>
                 </div>
 
@@ -137,7 +187,7 @@ export default function KnowledgeBaseView({ agent, onUpdateKnowledge }) {
                             <Clock size={20} />
                         </div>
                         <div>
-                            <span className="dt-kb-summary-val">{lastIndexed || 'Never'}</span>
+                            <span className="dt-kb-summary-val">{lastIndexed}</span>
                             <span className="dt-kb-summary-label">Last Updated</span>
                         </div>
                     </div>
@@ -172,18 +222,14 @@ export default function KnowledgeBaseView({ agent, onUpdateKnowledge }) {
                                             <Globe size={18} />
                                         </div>
                                         <div className="dt-kb-item-info">
-                                            <div className="dt-kb-item-title">{page.title}</div>
-                                            <a href={page.url} target="_blank" rel="noreferrer" className="dt-kb-item-url">{page.url}</a>
+                                            <div className="dt-kb-item-title">{page.title || page.url}</div>
+                                            {page.url && <a href={page.url} target="_blank" rel="noreferrer" className="dt-kb-item-url">{page.url}</a>}
                                         </div>
                                         <div className="dt-kb-item-status">
-                                            {page.status === 'Indexed' ? (
-                                                <span className="dt-kb-status-badge success">Indexed</span>
-                                            ) : (
-                                                <span className="dt-kb-status-badge processing"><Loader2 size={12} className="spinner" /> Processing</span>
-                                            )}
+                                            {getStatusBadge(page.status)}
                                         </div>
-                                        <div className="dt-kb-item-date">{page.updated}</div>
-                                        <button className="dt-kb-icon-btn hover-red" onClick={() => handleDeletePage(page.id)}>
+                                        <div className="dt-kb-item-date">{formatDate(page.updated_at || page.created_at)}</div>
+                                        <button className="dt-kb-icon-btn hover-red" onClick={() => handleDeleteSource(page.id)}>
                                             <Trash2 size={18} />
                                         </button>
                                     </motion.div>
@@ -247,18 +293,14 @@ export default function KnowledgeBaseView({ agent, onUpdateKnowledge }) {
                                             <FileText size={18} />
                                         </div>
                                         <div className="dt-kb-item-info">
-                                            <div className="dt-kb-item-title">{file.name}</div>
-                                            <div className="dt-kb-item-url">{file.type} File</div>
+                                            <div className="dt-kb-item-title">{file.file_name || file.title}</div>
+                                            <div className="dt-kb-item-url">{file.mime_type || 'File'}</div>
                                         </div>
                                         <div className="dt-kb-item-status">
-                                            {file.status === 'Indexed' ? (
-                                                <span className="dt-kb-status-badge success">Indexed</span>
-                                            ) : (
-                                                <span className="dt-kb-status-badge processing"><Loader2 size={12} className="spinner" /> Processing</span>
-                                            )}
+                                            {getStatusBadge(file.status)}
                                         </div>
-                                        <div className="dt-kb-item-date">{file.uploaded}</div>
-                                        <button className="dt-kb-icon-btn hover-red" onClick={() => handleDeleteFile(file.id)} disabled={file.status === 'Processing'}>
+                                        <div className="dt-kb-item-date">{formatDate(file.updated_at || file.created_at)}</div>
+                                        <button className="dt-kb-icon-btn hover-red" onClick={() => handleDeleteSource(file.id)} disabled={file.status === 'processing'}>
                                             <Trash2 size={18} />
                                         </button>
                                     </motion.div>

@@ -392,6 +392,51 @@
     border: 1px solid var(--dt-accent-border);
 }
 
+/* Markdown specific styles */
+.dt-dash-chat-bubble.markdown-body {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.dt-dash-chat-bubble.markdown-body p {
+    margin: 4px 0;
+}
+
+.dt-dash-chat-bubble.markdown-body p:last-child {
+    margin-bottom: 0;
+}
+
+.dt-dash-chat-bubble.markdown-body a {
+    color: #6C8EF5;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.dt-dash-chat-bubble.markdown-body a:hover {
+    opacity: 0.8;
+}
+
+.dt-dash-chat-bubble.markdown-body strong {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.dt-dash-chat-bubble.markdown-body hr {
+    border: none;
+    border-top: 1px solid var(--dt-accent-border);
+    margin: 1rem 0;
+}
+
+.dt-dash-chat-bubble.markdown-body ul,
+.dt-dash-chat-bubble.markdown-body ol {
+    margin: 4px 0;
+    padding-left: 16px;
+}
+
+.dt-dash-chat-bubble.markdown-body li {
+    margin: 2px 0;
+}
+
 .dt-dash-chat-bubble.user {
     background-color: var(--chat-bubble-user, var(--dt-accent-blue));
     color: var(--chat-text, var(--dt-text-white));

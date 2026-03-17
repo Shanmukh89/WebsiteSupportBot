@@ -16,6 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import KnowledgeBaseView from '../components/KnowledgeBaseView';
 import { useUser } from '../context/UserContext';
 import { useAgents } from '../context/AgentContext';
@@ -30,23 +31,51 @@ const SCRAPE_STEPS = [
 
 export default function Dashboard() {
     const navigate = useNavigate();
-    const { user } = useUser();
-    const { agents, setAgents } = useAgents();
-    const [activeAgentId, setActiveAgentId] = useState('2');
+    const { user, isLoading: isUserLoading } = useUser();
+    const { agents, setAgents, addAgent } = useAgents();
+    const [activeAgentId, setActiveAgentId] = useState(null);
     const [urlInput, setUrlInput] = useState('');
     const [chatInput, setChatInput] = useState('');
 
     // UI Interaction States
     const [typingStates, setTypingStates] = useState({});
-    const [isScraping, setIsScraping] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
     const [scrapeStep, setScrapeStep] = useState(0);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const [isRescraping, setIsRescraping] = useState({});
     const [activeTab, setActiveTab] = useState('agents'); // 'agents' | 'knowledge'
 
+    // Local chat messages keyed by agentId – persisted to localStorage
+    const [chatMessages, setChatMessages] = useState(() => {
+        try {
+            const saved = localStorage.getItem('chatMessages');
+            return saved ? JSON.parse(saved) : {};
+        } catch { return {}; }
+    });
+
+    // Persist chat messages whenever they change
+    useEffect(() => {
+        localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+    }, [chatMessages]);
+
+    // Helper to get messages for a specific agent
+    const getAgentMessages = (agentId) => {
+        if (!agentId) return [];
+        return chatMessages[agentId] || [];
+    };
+
+    // Helper to set messages for a specific agent
+    const setAgentMessages = (agentId, updater) => {
+        setChatMessages(prev => ({
+            ...prev,
+            [agentId]: typeof updater === 'function' ? updater(prev[agentId] || []) : updater
+        }));
+    };
+
     const chatEndRef = useRef(null);
     const fileInputRef = useRef(null);
     const activeAgent = agents.find(a => a.id === activeAgentId);
+    const activeMessages = getAgentMessages(activeAgentId);
 
     // Close profile menu if clicked outside or ESC key
     useEffect(() => {
@@ -70,7 +99,7 @@ export default function Dashboard() {
     // Auto-scroll when messages update or typing state changes
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [activeAgent?.messages, typingStates[activeAgentId], activeAgentId]);
+    }, [activeMessages, typingStates[activeAgentId], activeAgentId]);
 
     // -------- Creation Logic --------
     const getStoreNameFromUrl = (urlStr) => {
@@ -83,62 +112,70 @@ export default function Dashboard() {
         }
     };
 
-    const handleCreateAgent = () => {
+    const handleCreateAgent = async () => {
         if (!urlInput.trim()) return;
-        setIsScraping(true);
+        setIsCreating(true);
         setScrapeStep(0);
 
         let currentStep = 0;
+        // Stagger the steps to simulate real progress
         const interval = setInterval(() => {
             currentStep++;
-            if (currentStep < SCRAPE_STEPS.length) {
+            // Don't reach the final step until the actual API call finishes
+            if (currentStep < SCRAPE_STEPS.length - 1) {
                 setScrapeStep(currentStep);
             }
-        }, 800);
+        }, 5000); // 5 seconds per step
 
-        setTimeout(() => {
-            clearInterval(interval);
+        const storeName = getStoreNameFromUrl(urlInput);
 
-            const storeName = getStoreNameFromUrl(urlInput);
-            const newAgentId = Date.now().toString();
-
-            const newAgent = {
-                id: newAgentId,
-                name: storeName,
-                url: urlInput,
-                online: true,
-                color: COLORS[agents.length % COLORS.length],
-                messages: [
-                    {
-                        id: 1,
-                        text: `Hello! I'm the AI assistant for ${storeName}. How can I help you today?`,
-                        role: 'assistant'
-                    }
-                ],
-                knowledge: {
-                    pages: [{ id: Date.now().toString(), title: 'Home Page', url: urlInput, status: 'Indexed', updated: 'Just now' }],
-                    files: [],
-                    lastIndexed: 'Just now'
+        // Insert agent into Supabase (also creates the initial knowledge_source)
+        const newAgent = await addAgent({
+            name: storeName,
+            url: urlInput,
+            messages: [
+                {
+                    id: 1,
+                    text: `Hello! I'm the AI assistant for ${storeName}. How can I help you today?`,
+                    role: 'assistant'
                 }
-            };
+            ],
+        });
 
-            setAgents(prev => [newAgent, ...prev]);
-            setActiveAgentId(newAgentId);
-            setIsScraping(false);
+        if (newAgent) {
+            setActiveAgentId(newAgent.id);
             setUrlInput('');
-        }, 4000); // Wait slightly longer for effect
+
+            // Set the initial welcome message
+            setAgentMessages(newAgent.id, [{
+                id: Date.now(),
+                text: `Hello! I'm the AI assistant for ${storeName}. How can I help you today?`,
+                role: 'assistant'
+            }]);
+
+            // Trigger background scraping job
+            try {
+                await fetch(`${import.meta.env.VITE_API_URL}/api/agents/scrape`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        agentId: newAgent.id,
+                        url: urlInput
+                    })
+                });
+            } catch (err) {
+                console.error("Failed to start background scrape:", err);
+            }
+        }
+
+        // Clean up the fake step interval once the fetch completes
+        // The overlay will now be driven by activeAgent.status === 'scraping'
+        setScrapeStep(SCRAPE_STEPS.length - 1);
+        clearInterval(interval);
+        setIsCreating(false);
     };
 
-    // -------- Knowledge Logic --------
-    const handleUpdateKnowledge = (agentId, newKnowledge) => {
-        setAgents(prev => prev.map(a => {
-            if (a.id === agentId) {
-                const resolvedKnowledge = typeof newKnowledge === 'function' ? newKnowledge(a.knowledge) : newKnowledge;
-                return { ...a, knowledge: resolvedKnowledge };
-            }
-            return a;
-        }));
-    };
+    // Knowledge logic now handled by KnowledgeBaseView + AgentContext directly
 
     // -------- Chat Logic --------
     const handleSendMessage = (e) => {
@@ -151,34 +188,88 @@ export default function Dashboard() {
             role: 'user'
         };
 
-        setAgents(prev => prev.map(a =>
-            a.id === activeAgentId
-                ? { ...a, messages: [...a.messages, userMsg] }
-                : a
-        ));
+        setAgentMessages(activeAgentId, prev => [...prev, userMsg]);
 
         setChatInput('');
-        simulateAIResponse(activeAgentId);
+        streamAIResponse(activeAgentId, userMsg.text);
     };
 
-    const simulateAIResponse = (targetAgentId) => {
+    const streamAIResponse = async (targetAgentId, messageText) => {
         setTypingStates(prev => ({ ...prev, [targetAgentId]: true }));
 
-        setTimeout(() => {
-            const aiMsg = {
-                id: Date.now(),
-                text: "Thanks! This is a simulated AI reply to your query.",
-                role: 'assistant'
-            };
+        // Find existing history to send as context
+        const history = getAgentMessages(targetAgentId);
 
-            setAgents(prev => prev.map(a =>
-                a.id === targetAgentId
-                    ? { ...a, messages: [...a.messages, aiMsg] }
-                    : a
-            ));
+        // Create a placeholder message with a guaranteed unique ID
+        const placeholderId = Date.now() + 1;
+        const initialAiMsg = {
+            id: placeholderId,
+            text: "",
+            role: 'assistant'
+        };
 
+        setAgentMessages(targetAgentId, prev => [...prev, initialAiMsg]);
+
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    agentId: targetAgentId,
+                    message: messageText,
+                    history: history.slice(-5)
+                })
+            });
+
+            if (!response.ok) throw new Error('API Error');
+            if (!response.body) throw new Error('No body returned from API');
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
             setTypingStates(prev => ({ ...prev, [targetAgentId]: false }));
-        }, 1500);
+
+            let fullText = "";
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                const chunkString = decoder.decode(value, { stream: true });
+                // Split on actual newline pairs (SSE format)
+                const lines = chunkString.split('\n\n').filter(line => line.trim());
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.slice(6);
+                        if (dataStr === '[DONE]') break;
+
+                        try {
+                            const parsed = JSON.parse(dataStr);
+                            if (parsed.text) {
+                                fullText += parsed.text;
+                                setAgentMessages(targetAgentId, prev =>
+                                    prev.map(m =>
+                                        m.id === placeholderId ? { ...m, text: fullText } : m
+                                    )
+                                );
+                            }
+                        } catch (e) {
+                            console.error("Error parsing stream chunk:", e, dataStr);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Streaming chat error:", error);
+            setAgentMessages(targetAgentId, prev =>
+                prev.map(m =>
+                    m.id === placeholderId
+                        ? { ...m, text: "Sorry, I encountered an error connecting to my knowledge base. Please ensure the backend server is running." }
+                        : m
+                )
+            );
+            setTypingStates(prev => ({ ...prev, [targetAgentId]: false }));
+        }
     };
 
     const triggerFileInput = () => {
@@ -203,21 +294,13 @@ export default function Dashboard() {
             isUploading: true
         };
 
-        setAgents(prev => prev.map(a =>
-            a.id === activeAgentId
-                ? { ...a, messages: [...a.messages, uploadingMsg] }
-                : a
-        ));
+        setAgentMessages(activeAgentId, prev => [...prev, uploadingMsg]);
 
         // Simulate upload delay
         setTimeout(() => {
-            setAgents(prev => prev.map(a => {
-                if (a.id === activeAgentId) {
-                    const msgs = a.messages.map(m => m.id === tempId ? { ...m, isUploading: false } : m);
-                    return { ...a, messages: msgs };
-                }
-                return a;
-            }));
+            setAgentMessages(activeAgentId, prev =>
+                prev.map(m => m.id === tempId ? { ...m, isUploading: false } : m)
+            );
 
             // Auto-respond to the file
             setTypingStates(prev => ({ ...prev, [activeAgentId]: true }));
@@ -229,11 +312,7 @@ export default function Dashboard() {
                         : `I've received your file "${file.name}". How can I help you with this document?`,
                     role: 'assistant'
                 };
-                setAgents(prev => prev.map(a =>
-                    a.id === activeAgentId
-                        ? { ...a, messages: [...a.messages, aiMsg] }
-                        : a
-                ));
+                setAgentMessages(activeAgentId, prev => [...prev, aiMsg]);
                 setTypingStates(prev => ({ ...prev, [activeAgentId]: false }));
             }, 1500);
 
@@ -242,41 +321,54 @@ export default function Dashboard() {
         e.target.value = ''; // Reset input so same file can be uploaded again if needed
     };
 
-    const handleRescrape = () => {
+    const handleRescrape = async () => {
         setIsRescraping(prev => ({ ...prev, [activeAgentId]: true }));
 
         const indexingMsg = {
             id: Date.now(),
-            text: "Re-indexing website content...",
+            text: "Re-indexing website content... This may take a minute.",
             role: 'system_uploading'
         };
 
-        setAgents(prev => prev.map(a =>
-            a.id === activeAgentId
-                ? { ...a, messages: [...a.messages, indexingMsg] }
-                : a
-        ));
+        setAgentMessages(activeAgentId, prev => [...prev, indexingMsg]);
 
-        setTimeout(() => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agents/scrape`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    agentId: activeAgentId,
+                    url: activeAgent.url
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to rescrape');
+            
+            const result = await response.json();
+
             const successMsg = {
                 id: Date.now() + 1,
-                text: "Knowledge base updated successfully.",
+                text: `Knowledge base updated successfully.`,
                 role: 'system'
             };
             const welcomeMsg = {
                 id: Date.now() + 2,
-                text: `Hello! I'm the AI assistant for ${activeAgent.name}. How can I help you today?`,
+                text: `Hello! I'm the AI assistant for ${activeAgent.name}. I've just been updated with the latest information!`,
                 role: 'assistant'
             };
 
-            setAgents(prev => prev.map(a =>
-                a.id === activeAgentId
-                    ? { ...a, messages: [successMsg, welcomeMsg] }
-                    : a
-            ));
-
+            setAgentMessages(activeAgentId, prev => [...prev, successMsg, welcomeMsg]);
+        } catch (error) {
+            console.error("Failed to rescrape:", error);
+            const errorMsg = {
+                id: Date.now() + 1,
+                text: "Failed to update knowledge base. Please try again.",
+                role: 'system'
+            };
+            setAgentMessages(activeAgentId, prev => [...prev, errorMsg]);
+        } finally {
             setIsRescraping(prev => ({ ...prev, [activeAgentId]: false }));
-        }, 3000);
+        }
     };
 
     const handleKeyPress = (e) => {
@@ -284,6 +376,15 @@ export default function Dashboard() {
             handleSendMessage();
         }
     };
+
+    // Guard: wait for user profile to load before rendering
+    if (isUserLoading || !user) {
+        return (
+            <div className="dt-dash-layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Loader2 size={32} className="spinner" style={{ color: 'var(--dt-accent-blue)' }} />
+            </div>
+        );
+    }
 
     return (
         <div className="dt-dash-layout">
@@ -354,16 +455,16 @@ export default function Dashboard() {
                             placeholder="https://enter-store-url.com to scrape..."
                             value={urlInput}
                             onChange={(e) => setUrlInput(e.target.value)}
-                            disabled={isScraping}
+                            disabled={isCreating}
                         />
                     </div>
                     <Button
                         variant="solid"
                         className="dt-dash-create-btn"
                         onClick={handleCreateAgent}
-                        disabled={isScraping || !urlInput.trim()}
+                        disabled={isCreating || !urlInput.trim()}
                     >
-                        {isScraping ? 'Scraping...' : 'Create Agent'}
+                        {isCreating ? 'Scraping...' : 'Create Agent'}
                     </Button>
                 </header>
 
@@ -400,7 +501,6 @@ export default function Dashboard() {
                     {activeTab === 'knowledge' ? (
                         <KnowledgeBaseView
                             agent={activeAgent}
-                            onUpdateKnowledge={handleUpdateKnowledge}
                         />
                     ) : (
                         <section className="dt-dash-playground">
@@ -430,7 +530,7 @@ export default function Dashboard() {
                             <div className="dt-dash-chat-area" style={{ position: 'relative' }}>
                                 {/* Scraping Loader Overlay */}
                                 <AnimatePresence>
-                                    {isScraping && (
+                                    {activeAgent?.status === 'scraping' && (
                                         <motion.div
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
@@ -468,7 +568,7 @@ export default function Dashboard() {
 
                                 <div className="dt-dash-chat-messages">
                                     <AnimatePresence initial={false}>
-                                        {activeAgent?.messages.map((msg) => (
+                                        {activeMessages.map((msg) => (
                                             <motion.div
                                                 key={msg.id}
                                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -499,8 +599,31 @@ export default function Dashboard() {
                                                     </div>
                                                 )}
                                                 {(msg.role === 'assistant' || msg.role === 'user') && (
-                                                    <div className={`dt-dash-chat-bubble ${msg.role === 'user' ? 'user' : 'bot'}`}>
-                                                        {msg.text}
+                                                    <div className={`dt-dash-chat-bubble ${msg.role === 'user' ? 'user' : 'bot'} ${msg.role === 'assistant' ? 'markdown-body' : ''}`}>
+                                                        {msg.role === 'assistant' ? (
+                                                            <ReactMarkdown
+                                                                components={{
+                                                                    a: ({ href, children }) => (
+                                                                        <a
+                                                                            href={href}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            style={{ color: '#6C8EF5', textDecoration: 'underline', cursor: 'pointer' }}
+                                                                        >
+                                                                            {children}
+                                                                        </a>
+                                                                    ),
+                                                                    p: ({ children }) => <p style={{ margin: '4px 0' }}>{children}</p>,
+                                                                    ul: ({ children }) => <ul style={{ paddingLeft: '16px', margin: '4px 0' }}>{children}</ul>,
+                                                                    li: ({ children }) => <li style={{ margin: '2px 0' }}>{children}</li>,
+                                                                    strong: ({ children }) => <strong style={{ color: '#ffffff' }}>{children}</strong>,
+                                                                }}
+                                                            >
+                                                                {msg.text}
+                                                            </ReactMarkdown>
+                                                        ) : (
+                                                            msg.text
+                                                        )}
                                                     </div>
                                                 )}
                                             </motion.div>
@@ -543,16 +666,16 @@ export default function Dashboard() {
                                     <input
                                         type="text"
                                         className="dt-dash-chat-input"
-                                        placeholder="Ask your agent a question..."
+                                        placeholder={activeAgent?.status === 'scraping' ? "Scraping in progress..." : "Ask your agent a question..."}
                                         value={chatInput}
                                         onChange={(e) => setChatInput(e.target.value)}
                                         onKeyDown={handleKeyPress}
-                                        disabled={isRescraping[activeAgentId]}
+                                        disabled={isRescraping[activeAgentId] || activeAgent?.status === 'scraping'}
                                     />
                                     <button
                                         className="dt-dash-icon-btn hover-brightness"
                                         onClick={handleSendMessage}
-                                        disabled={!chatInput.trim() || isRescraping[activeAgentId]}
+                                        disabled={!chatInput.trim() || isRescraping[activeAgentId] || activeAgent?.status === 'scraping'}
                                         type="button"
                                         style={{
                                             color: 'var(--chat-primary, var(--dt-accent-blue))',
@@ -562,8 +685,8 @@ export default function Dashboard() {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            opacity: (!chatInput.trim() || isRescraping[activeAgentId]) ? 0.5 : 1,
-                                            cursor: (!chatInput.trim() || isRescraping[activeAgentId]) ? 'not-allowed' : 'pointer'
+                                            opacity: (!chatInput.trim() || isRescraping[activeAgentId] || activeAgent?.status === 'scraping') ? 0.5 : 1,
+                                            cursor: (!chatInput.trim() || isRescraping[activeAgentId] || activeAgent?.status === 'scraping') ? 'not-allowed' : 'pointer'
                                         }}
                                     >
                                         <Send size={16} />

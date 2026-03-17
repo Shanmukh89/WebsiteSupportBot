@@ -22,6 +22,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
 import { useChatTheme } from '../context/ChatThemeContext';
 import { useAgents } from '../context/AgentContext';
+import { supabase } from '../lib/supabase';
 import './AccountSettings.css';
 
 export default function AccountSettings() {
@@ -29,7 +30,7 @@ export default function AccountSettings() {
     const { themeSettings, setThemeSettings } = useTheme();
     const { chatTheme, setChatTheme } = useChatTheme();
     const { user, updateUser } = useUser();
-    const { clearKnowledgeBase, clearAllData } = useAgents();
+    const { agents, clearAllData, clearAllSources } = useAgents();
 
     // Initial State combining local profile/security/AI with global theme
     const [settings, setSettings] = useState({
@@ -105,33 +106,53 @@ export default function AccountSettings() {
         setAvatarHasChanges(true);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         setIsSaving(true);
 
-        // 1. Update Global Theme contexts
-        setThemeSettings({
-            ...themeSettings,
-            themeMode: settings.themeMode,
-            fontStyle: settings.fontStyle
-        });
+        try {
+            // Update Password in Supabase (if provided)
+            if (settings.newPassword) {
+                if (settings.newPassword !== settings.confirmPassword) {
+                    alert("New passwords do not match.");
+                    setIsSaving(false);
+                    return;
+                }
+                const { error } = await supabase.auth.updateUser({
+                    password: settings.newPassword
+                });
+                if (error) {
+                    alert(`Failed to update password: ${error.message}`);
+                    setIsSaving(false);
+                    return;
+                }
+            }
 
-        // 2. Update Chat Theme context
-        setChatTheme({
-            ...chatTheme,
-            chatPrimaryColor: settings.chatPrimaryColor
-        });
+            // 1. Update Global Theme contexts
+            setThemeSettings({
+                ...themeSettings,
+                themeMode: settings.themeMode,
+                fontStyle: settings.fontStyle
+            });
 
-        // 3. Update User Context (global)
-        updateUser({
-            name: settings.name,
-            username: settings.username,
-            avatar: previewImage
-        });
+            // 2. Update Chat Theme context
+            setChatTheme({
+                ...chatTheme,
+                chatPrimaryColor: settings.chatPrimaryColor
+            });
 
-        // Simulate API call
-        setTimeout(() => {
+            // 3. Update User Context (global)
+            await updateUser({
+                name: settings.name,
+                avatar: previewImage
+            });
+
             setIsSaving(false);
-            setOriginalSettings({ ...settings });
+
+            // Clear password fields after save
+            const nextSettings = { ...settings, currentPassword: '', newPassword: '', confirmPassword: '' };
+            setSettings(nextSettings);
+            setOriginalSettings(nextSettings);
+
             setAvatarHasChanges(false);
             setHasChanges(false);
 
@@ -140,7 +161,11 @@ export default function AccountSettings() {
             setTimeout(() => {
                 setShowToast(false);
             }, 3000);
-        }, 1200);
+        } catch (error) {
+            console.error("Save error:", error);
+            setIsSaving(false);
+            alert("An error occurred while saving.");
+        }
     };
 
     const handleDeleteAccount = () => {
@@ -150,9 +175,11 @@ export default function AccountSettings() {
         }
     };
 
-    const handleClearKnowledge = () => {
-        if (window.confirm("Are you sure you want to clear the entire knowledge base for your agents? This will un-index all pages and files.")) {
-            clearKnowledgeBase();
+    const handleClearKnowledge = async () => {
+        if (window.confirm("Are you sure you want to clear the entire knowledge base for your agents? This will remove all indexed pages and uploaded files.")) {
+            for (const agent of agents) {
+                await clearAllSources(agent.id);
+            }
             alert("Knowledge Base has been cleared.");
         }
     };
@@ -211,25 +238,14 @@ export default function AccountSettings() {
                                     </div>
                                 </div>
 
-                                <div className="dt-settings-form-row">
-                                    <div className="dt-settings-form-group">
-                                        <label className="dt-settings-label">Account Name</label>
-                                        <input
-                                            type="text"
-                                            className="dt-settings-input"
-                                            value={settings.name}
-                                            onChange={(e) => handleSettingChange('name', e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="dt-settings-form-group">
-                                        <label className="dt-settings-label">Username</label>
-                                        <input
-                                            type="text"
-                                            className="dt-settings-input"
-                                            value={settings.username}
-                                            onChange={(e) => handleSettingChange('username', e.target.value)}
-                                        />
-                                    </div>
+                                <div className="dt-settings-form-group" style={{ maxWidth: '50%' }}>
+                                    <label className="dt-settings-label">Account Name</label>
+                                    <input
+                                        type="text"
+                                        className="dt-settings-input"
+                                        value={settings.name}
+                                        onChange={(e) => handleSettingChange('name', e.target.value)}
+                                    />
                                 </div>
 
                                 <div className="dt-settings-form-group" style={{ maxWidth: '50%' }}>

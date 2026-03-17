@@ -18,6 +18,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+*.log
+*.txt
+!requirements.txt
 
 # OS files
 .DS_Store
@@ -36,3 +39,26 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Debug / test / diagnostic artifacts
+diagnose_*.js
+diagnostic.js
+debug*.js
+test_*.js
+test_*.ts
+check_*.js
+fix_*.js
+nuclear_*.js
+run_migration.js
+scrape_test_*
+
+# Project Requirement Docs
+prd.md
+design-requirement.md
+
+
