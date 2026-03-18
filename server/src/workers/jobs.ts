@@ -4,10 +4,9 @@ import { config } from '../utils/config';
 import { runScrapeJob } from './scraperService';
 
 // Initialize Redis connection
-const connection = new IORedis({
-    host: config.redis.host,
-    port: config.redis.port,
-    maxRetriesPerRequest: null,
+const connection = new IORedis(config.redis.url, {
+    tls: { rejectUnauthorized: false },
+    maxRetriesPerRequest: null
 });
 
 // Configure Queue
