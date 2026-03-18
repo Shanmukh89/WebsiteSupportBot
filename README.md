@@ -6,7 +6,7 @@ Site2Support is a full-stack application that scrapes product data from any onli
 
 ## Live Demo
 
-[View Live Application](https://your-deployment-url.com)
+[View Live Application](https://website-support-bot.vercel.app/)
 
 ## Table of Contents
 
