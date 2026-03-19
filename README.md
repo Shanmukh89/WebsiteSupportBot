@@ -1,8 +1,8 @@
-# Site2Support
+# Ragify
 
 Turn any e-commerce website into an AI-powered customer support agent in minutes.
 
-Site2Support is a full-stack application that scrapes product data from any online store, builds a vector knowledge base, and serves a real-time RAG (Retrieval-Augmented Generation) chatbot capable of answering customer queries with accurate, source-grounded responses. It is designed for store owners, support teams, and developers who need an instant, zero-training AI assistant backed by live product data.
+Ragify is a full-stack application that scrapes product data from any online store, builds a vector knowledge base, and serves a real-time RAG (Retrieval-Augmented Generation) chatbot capable of answering customer queries with accurate, source-grounded responses. It is designed for store owners, support teams, and developers who need an instant, zero-training AI assistant backed by live product data.
 
 ## Live Demo
 
