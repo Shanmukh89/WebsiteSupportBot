@@ -24,8 +24,13 @@ export async function runScrapeJob(agentId: string, url: string) {
         
         // When running via ts-node or compiled dist, the path might vary. Let's use process.cwd() as a safer anchor.
         const scriptPath = path.resolve(process.cwd(), 'scripts/crawl4ai_service.py');
-        const pythonExecutable = path.resolve(process.cwd(), 'venv/Scripts/python.exe');
-        
+        // Use cross-platform execution or fallback to global python3 on cloud platforms
+        const isWindows = process.platform === 'win32';
+        const pythonExecutable = isWindows 
+            ? path.resolve(process.cwd(), 'venv/Scripts/python.exe')
+            : 'python3'; // On Render/Linux, global python3 in PATH is standard
+
+        console.log(`Using Platform: ${process.platform}`);
         console.log(`Using Python: ${pythonExecutable}`);
         console.log(`Using Script: ${scriptPath}`);
         
@@ -34,6 +39,11 @@ export async function runScrapeJob(agentId: string, url: string) {
             
             let stdoutData = '';
             let stderrData = '';
+
+            // MUST HANDLE ERROR EVENT! If executable is missing, this fires and close never fires.
+            pythonProcess.on('error', (err) => {
+                reject(new Error(`Failed to start python process: ${err.message}`));
+            });
             
             pythonProcess.stdout.on('data', (data) => {
                 stdoutData += data.toString();
@@ -46,7 +56,7 @@ export async function runScrapeJob(agentId: string, url: string) {
             
             pythonProcess.on('close', (code) => {
                 if (code !== 0) {
-                    reject(new Error(`Crawler script exited with code ${code}`));
+                    reject(new Error(`Crawler script exited with code ${code}. Stderr: ${stderrData}`));
                     return;
                 }
                 
