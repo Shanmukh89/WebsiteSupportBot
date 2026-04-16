@@ -10,10 +10,43 @@ import { AgentProvider } from './context/AgentContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
-// Wrapper to pass navigation props cleanly
+// Wrapper to redirect authenticated users away from Landing
 function LandingWrapper() {
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center" style={{ background: '#050505' }}>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white"></div>
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <LandingPage onGetStarted={() => navigate('/auth')} />;
+}
+
+// Wrapper to redirect authenticated users away from Auth
+function AuthRoute({ children }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center" style={{ background: '#050505' }}>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white"></div>
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
 }
 
 // Protected Route component
@@ -46,7 +79,7 @@ function App() {
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<LandingWrapper />} />
-                  <Route path="/auth" element={<AuthPage />} />
+                  <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
                 </Routes>
