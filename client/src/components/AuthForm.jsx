@@ -89,7 +89,12 @@ const AuthSeparator = ({ text = "OR SIGN IN WITH" }) => (
 // Social buttons — Google + Github only per reference
 const AuthSocialButtons = ({ isLoading }) => {
     const handleSocialLogin = async (provider) => {
-        await supabase.auth.signInWithOAuth({ provider });
+        await supabase.auth.signInWithOAuth({ 
+            provider,
+            options: {
+                redirectTo: `${window.location.origin}/dashboard`
+            }
+        });
     };
 
     return (
