@@ -99,6 +99,6 @@ model KnowledgeChunk {
   agent      Agent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
   content    String
   chunkIndex Int             @default(0)
-  embedding  Unsupported("vector(1536)")?
+  embedding  Unsupported("vector(768)")?
   metadata   Json?
 }

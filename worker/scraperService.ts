@@ -1,13 +1,12 @@
 import { spawn } from 'child_process';
 import path from 'path';
-import { OpenAIEmbeddings } from '@langchain/openai';
+import { GoogleGenAIEmbeddings } from '@langchain/google-genai';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../lib/prisma'; // Share the Prisma client
 
-const embeddings = new OpenAIEmbeddings({
-    openAIApiKey: process.env.OPENAI_API_KEY,
-    modelName: 'text-embedding-3-small',
-    dimensions: 1536,
+const embeddings = new GoogleGenAIEmbeddings({
+    apiKey: process.env.GEMINI_API_KEY,
+    modelName: 'text-embedding-004',
 });
 
 export async function runScrapeJob(agentId: string, url: string) {

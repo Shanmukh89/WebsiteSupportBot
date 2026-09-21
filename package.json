@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^1.5.0",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.3.4",
+    "@langchain/google-genai": "^2.3.2",
     "@langchain/openai": "^0.0.14",
     "@prisma/client": "^5.10.2",
     "@radix-ui/react-checkbox": "^1.0.4",
