@@ -1,10 +1,10 @@
 import { spawn } from 'child_process';
 import path from 'path';
-import { GoogleGenAIEmbeddings } from '@langchain/google-genai';
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../lib/prisma'; // Share the Prisma client
 
-const embeddings = new GoogleGenAIEmbeddings({
+const embeddings = new GoogleGenerativeAIEmbeddings({
     apiKey: process.env.GEMINI_API_KEY,
     modelName: 'text-embedding-004',
 });
