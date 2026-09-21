@@ -22,7 +22,6 @@ import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
 import { useChatTheme } from '../context/ChatThemeContext';
 import { useAgents } from '../context/AgentContext';
-import { supabase } from '../lib/supabase';
 import './AccountSettings.css';
 
 export default function AccountSettings() {
@@ -39,9 +38,9 @@ export default function AccountSettings() {
     // Initial State combining local profile/security/AI with global theme
     const [settings, setSettings] = useState({
         // Profile (Loaded from global user context)
-        name: user.name || '',
-        username: user.username || '',
-        email: user.email || '',
+        name: user?.name || '',
+        username: user?.username || '',
+        email: user?.email || '',
 
         // Security
         currentPassword: '',
@@ -63,6 +62,19 @@ export default function AccountSettings() {
         chatPrimaryColor: chatTheme.chatPrimaryColor || '#6366f1',
     });
 
+    // Sync settings when user data loads
+    useEffect(() => {
+        if (user) {
+            setSettings(prev => ({
+                ...prev,
+                name: user.name || '',
+                username: user.username || '',
+                email: user.email || ''
+            }));
+            if (user.avatar) setPreviewImage(user.avatar);
+        }
+    }, [user]);
+
     const [originalSettings, setOriginalSettings] = useState({ ...settings });
     const [hasChanges, setHasChanges] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -71,7 +83,7 @@ export default function AccountSettings() {
     const fileInputRef = useRef(null);
 
     // Profile Picture State
-    const [previewImage, setPreviewImage] = useState(user.avatar || null);
+    const [previewImage, setPreviewImage] = useState(user?.avatar || null);
     const [avatarHasChanges, setAvatarHasChanges] = useState(false);
 
     // Deep compare to check for changes
@@ -114,18 +126,19 @@ export default function AccountSettings() {
         setIsSaving(true);
 
         try {
-            // Update Password in Supabase (if provided)
             if (settings.newPassword) {
                 if (settings.newPassword !== settings.confirmPassword) {
                     alert("New passwords do not match.");
                     setIsSaving(false);
                     return;
                 }
-                const { error } = await supabase.auth.updateUser({
-                    password: settings.newPassword
+                const res = await fetch('/api/profile/password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: settings.newPassword })
                 });
-                if (error) {
-                    alert(`Failed to update password: ${error.message}`);
+                if (!res.ok) {
+                    alert("Failed to update password.");
                     setIsSaving(false);
                     return;
                 }

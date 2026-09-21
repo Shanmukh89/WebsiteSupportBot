@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../pages/LandingPage.css';
+import '../views/LandingPage.css';
 
 export const FeatureAskAnimation = () => {
     const [step, setStep] = useState(0);

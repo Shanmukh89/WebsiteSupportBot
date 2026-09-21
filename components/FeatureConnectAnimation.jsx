@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle2 } from 'lucide-react';
-import '../pages/LandingPage.css'; // Reuse chat-bubble styles
+import '../views/LandingPage.css'; // Reuse chat-bubble styles
 
 export const FeatureConnectAnimation = () => {
     const [step, setStep] = useState(0);

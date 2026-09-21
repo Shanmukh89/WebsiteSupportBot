@@ -1,7 +1,7 @@
 "use client";
 
-import LandingPage from "@/pages/LandingPage";
-import "../pages/LandingPage.css";
+import LandingPage from "@/views/LandingPage";
+import "../views/LandingPage.css";
 
 export default function Page() {
   return <LandingPage />;

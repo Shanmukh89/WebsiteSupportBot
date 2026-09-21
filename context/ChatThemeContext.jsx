@@ -29,8 +29,11 @@ const adjustColor = (colorHex, percent) => {
 
 export function ChatThemeProvider({ children }) {
     const [chatTheme, setChatTheme] = useState(() => {
-        const saved = localStorage.getItem('ragify_chat_theme');
-        return saved ? JSON.parse(saved) : {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('ragify_chat_theme');
+            if (saved) return JSON.parse(saved);
+        }
+        return {
             chatPrimaryColor: '#6366f1'
         };
     });

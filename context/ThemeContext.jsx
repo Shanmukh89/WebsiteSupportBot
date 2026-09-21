@@ -5,8 +5,11 @@ const ThemeContext = createContext();
 export function ThemeProvider({ children }) {
     // Initial State defaults (could load from localStorage)
     const [themeSettings, setThemeSettings] = useState(() => {
-        const saved = localStorage.getItem('ragify_theme');
-        return saved ? JSON.parse(saved) : {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('ragify_theme');
+            if (saved) return JSON.parse(saved);
+        }
+        return {
             primaryColor: '#0044FF',
             themeMode: 'Dark',
             fontStyle: 'Inter'
