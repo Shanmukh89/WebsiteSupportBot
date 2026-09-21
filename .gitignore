@@ -59,7 +59,6 @@ scrape_test_*
 
 # Project Requirement Docs
 prd.md
-design-requirement.md
-
-
+design-requirement.md# Knowledge graph
+graphify-out/
 
