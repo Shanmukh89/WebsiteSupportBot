@@ -3,8 +3,20 @@ import { auth } from "@/auth";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
+function formatRedisUrl(rawUrl: string | undefined): string {
+  if (!rawUrl) return "redis://localhost:6379";
+  const trimmed = rawUrl.trim();
+  if (trimmed.startsWith("redis://") || trimmed.startsWith("rediss://")) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("//")) {
+    return `rediss:${trimmed}`;
+  }
+  return `rediss://${trimmed}`;
+}
+
 // Initialize Redis and BullMQ
-const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+const redisUrl = formatRedisUrl(process.env.REDIS_URL);
 const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
 const scrapeQueue = new Queue("scrapeQueue", { connection });
 
