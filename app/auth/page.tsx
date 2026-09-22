@@ -1,11 +1,7 @@
 "use client";
 
-import AuthForm from "@/components/AuthForm";
+import AuthPage from "@/views/AuthPage";
 
-export default function AuthPage() {
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-black" style={{ background: '#080808' }}>
-      <AuthForm />
-    </div>
-  );
+export default function AuthPageRoute() {
+  return <AuthPage />;
 }
