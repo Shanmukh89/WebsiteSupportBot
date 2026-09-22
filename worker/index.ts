@@ -4,18 +4,27 @@ import http from "http";
 import { runScrapeJob } from "./scraperService";
 
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
-const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
+const connection = new Redis(redisUrl, {
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+});
+
+connection.on("error", (err) => {
+  console.error("Redis connection error:", err.message);
+});
 
 console.log("Starting Worker...");
 
 // Lightweight HTTP server for platform health checks (Render, Koyeb, etc.)
-const port = process.env.PORT || 8080;
-http.createServer((req, res) => {
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("Ragify Worker is running OK\n");
-}).listen(port, () => {
-  console.log(`Health check server listening on port ${port}`);
-});
+const port = Number(process.env.PORT) || 8080;
+http
+  .createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("Ragify Worker is running OK\n");
+  })
+  .listen(port, "0.0.0.0", () => {
+    console.log(`Health check server listening on 0.0.0.0:${port}`);
+  });
 
 const scrapeWorker = new Worker(
   "scrapeQueue",
@@ -32,7 +41,11 @@ scrapeWorker.on("completed", (job) => {
 });
 
 scrapeWorker.on("failed", (job, err) => {
-  console.log(`[Job ${job?.id}] Failed: ${err.message}`);
+  console.log(`[Job ${job?.id}] Failed: ${err?.message}`);
+});
+
+scrapeWorker.on("error", (err) => {
+  console.error("Worker error:", err.message);
 });
 
 console.log("Scrape worker is listening for jobs on 'scrapeQueue'...");
